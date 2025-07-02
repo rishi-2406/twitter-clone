@@ -1,6 +1,7 @@
 import express from "express";
 import authRoute from "./routes/auth.routes.js";
 import userRoute from "./routes/user.routes.js";
+import postsRoute from "./routes/post.routes.js";
 import connectdb from "./db/connectdb.js";
 import {v2} from "cloudinary"
 import dotenv from "dotenv"
@@ -22,6 +23,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoute);
 app.use("/api/user", userRoute);
+app.use("/api/posts", postsRoute);
 
 app.listen(PORT, () => {
   console.log("server running on", PORT);
