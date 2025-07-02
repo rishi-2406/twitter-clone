@@ -115,12 +115,18 @@ export const likePost = async (req, res) => {
     if (postToUpdate.likes.includes(req.user._id.toString())) {
       postToUpdate.likes = postToUpdate.likes.filter(
         (userLiked) => userLiked.toString() !== req.user._id.toString()
-      ); 
-      await User.updateOne({_id : req.user._id} , {$pull : {likedPosts : postId}});
+      );
+      await User.updateOne(
+        { _id: req.user._id },
+        { $pull: { likedPosts: postId } }
+      );
       message = "Unliked Successfully";
     } else {
       postToUpdate.likes.push(req.user._id);
-      await User.updateOne({_id : req.user._id} , {$push : {likedPosts : postId}});
+      await User.updateOne(
+        { _id: req.user._id },
+        { $push: { likedPosts: postId } }
+      );
     }
 
     await postToUpdate.save();
@@ -142,33 +148,59 @@ export const likePost = async (req, res) => {
 };
 
 export const getAllPost = async (req, res) => {
-    try {
-        const postList = await Post.find().sort({createdAt : -1}).populate({
-            path : "user",
-            select: "-password"
-        }).populate({
-            path : "comments.user",
-            select: "-password"
-        });
-        if(postList.length === 0) return res.status(200).json([]);
-        return res.status(200).json(postList);
-    } catch {
-        return res.status(500).json({error : "Couldnt fecth the posts"})
-    }
-}
+  try {
+    const postList = await Post.find()
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "user",
+        select: "-password",
+      })
+      .populate({
+        path: "comments.user",
+        select: "-password",
+      });
+    if (postList.length === 0) return res.status(200).json([]);
+    return res.status(200).json(postList);
+  } catch {
+    return res.status(500).json({ error: "Couldnt fecth the posts" });
+  }
+};
 
 export const getAllLikedBy = async (req, res) => {
-    try {
-        const likedList = await Post.find({_id : {$in : req.user.likedPosts}})
-        .populate({
-            path : "user",
-            select : "-password",
-        }).populate ({
-            path : "comments.user",
-            select : "-password"
-        })
-        return res.status(200).json({likedList});
-    } catch (error) {
-        return res.status(500).json({error : "Cant fetch all liked posts" , e  : error.message});
-    }
-}
+  try {
+    const likedList = await Post.find({ _id: { $in: req.user.likedPosts } })
+      .populate({
+        path: "user",
+        select: "-password",
+      })
+      .populate({
+        path: "comments.user",
+        select: "-password",
+      });
+    return res.status(200).json({ likedList });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: "Cant fetch all liked posts", e: error.message });
+  }
+};
+
+export const getFollowedPosts = async (req, res) => {
+  try {
+    const postList = await Post.find({ user: { $in: req.user.following } })
+      .populate({
+        path: "user",
+        select: "-password",
+      })
+      .populate({
+        path: "comments.user",
+        select: "-password",
+      });
+
+    return res.status(200).json({ postList });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: "Cant fetch all followed posts", e: error.message });
+  }
+};
