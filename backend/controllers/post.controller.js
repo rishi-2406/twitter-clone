@@ -187,7 +187,7 @@ export const getAllLikedBy = async (req, res) => {
 
 export const getFollowedPosts = async (req, res) => {
   try {
-    const postList = await Post.find({ user: { $in: req.user.following } })
+    const postList = await Post.find({ user: { $in: req.user.following } }).sort({createdAt : -1})
       .populate({
         path: "user",
         select: "-password",
@@ -204,3 +204,25 @@ export const getFollowedPosts = async (req, res) => {
       .json({ error: "Cant fetch all followed posts", e: error.message });
   }
 };
+
+export const getUserPost = async (req, res) => {
+    try {
+        const user = await User.findOne({username : req.params.username})
+        // console.log(user);
+        if(!user) return res.status(500).json({error : "Couldnt find that user"})
+        const userId = user._id;
+        const postList = await Post.find({user : userId}).sort({createdAt : -1})
+        .populate({
+        path: "user",
+        select: "-password",
+      })
+      .populate({
+        path: "comments.user",
+        select: "-password",
+      });
+      console.log(postList);
+        return res.status(200).json(postList);
+    } catch (error) {
+        return res.status(500).json({error : "Couldnt fetch user posts"})
+    }
+}
