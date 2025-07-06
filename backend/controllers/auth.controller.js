@@ -39,7 +39,7 @@ export const signup = async (req, res) => {
       res.status(400).json({ error: "Failed to create account" });
     }
   } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: e.message || "Internal server error" });
   }
 };
 
@@ -52,7 +52,7 @@ export const login = async (req, res) => {
             const isCorrect = await bcrypt.compare(password , user?.password || "");
             if(!isCorrect) res.status(400).json({error : "Incorrect Password!"});
             generateTokenAndSetCookie(user._id, res);
-            res.status(200).json({message : "Logged in Successfully" , username , password, id: user._id});
+            res.status(200).json({message : "Logged in Successfully" , username , id: user._id});
         } else {
             console.log("User doesnt exist!");
             res.status(400).json({error : "User doesnt exist!"})
@@ -81,6 +81,6 @@ export const getMe = async  (req , res) => {
        const user = req.user;
        res.status(200).json(user);
     } catch (e) {
-        res.status(500).json({error : "Error while fetching user"})
+        res.status(500).json({error : "Unauthorized"});
     }
 }
