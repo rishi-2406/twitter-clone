@@ -48,7 +48,11 @@ function App() {
         <Route path="/profile/:username" element={authUser ? <ProfilePage /> : <Navigate to={'/login'}/> } />
       </Routes>
       {authUser && <RightPanel />}
-      <Toaster position="bottom-right" />
+      <Toaster position="bottom-right"   toastOptions={{
+    style: {
+      background: "#333",
+      color: "#fff",  },
+  }} />
     </div>
   );
 }
