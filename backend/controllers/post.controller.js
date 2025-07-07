@@ -197,7 +197,7 @@ export const getFollowedPosts = async (req, res) => {
         select: "-password",
       });
 
-    return res.status(200).json({ postList });
+    return res.status(200).json(postList );
   } catch (error) {
     return res
       .status(500)

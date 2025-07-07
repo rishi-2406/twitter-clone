@@ -11,7 +11,7 @@ router.post('/like/:id', protectRoute ,  likePost);
 router.post('/comment/:id', protectRoute ,  commentPost);
 router.get('/all', protectRoute ,getAllPost)
 router.get('/likes/:id' , protectRoute ,getAllLikedBy)
-router.get('/following/:id', protectRoute, getFollowedPosts)
+router.get('/following', protectRoute, getFollowedPosts)
 router.get('/user/:username', protectRoute, getUserPost)
 
 export default router;
