@@ -97,6 +97,7 @@ export const commentPost = async (req, res) => {
 };
 
 export const likePost = async (req, res) => {
+
   try {
     const postId = req.params.id;
 
@@ -111,6 +112,7 @@ export const likePost = async (req, res) => {
     }
 
     let message = "Liked Successfully";
+    let updatedLikes = postToUpdate.likes;
 
     if (postToUpdate.likes.includes(req.user._id.toString())) {
       postToUpdate.likes = postToUpdate.likes.filter(
@@ -121,12 +123,14 @@ export const likePost = async (req, res) => {
         { $pull: { likedPosts: postId } }
       );
       message = "Unliked Successfully";
+      updatedLikes = updatedLikes.filter((id) => id.toString() !== req.user._id.toString());
     } else {
       postToUpdate.likes.push(req.user._id);
       await User.updateOne(
         { _id: req.user._id },
         { $push: { likedPosts: postId } }
       );
+      updatedLikes = postToUpdate.likes;
     }
 
     await postToUpdate.save();
@@ -138,8 +142,8 @@ export const likePost = async (req, res) => {
     });
 
     newNotification.save();
-
-    return res.status(201).json({ message });
+return res.status(201).json({ message , updatedLikes});
+    
   } catch (error) {
     return res
       .status(500)

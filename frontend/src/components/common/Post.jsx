@@ -1,6 +1,6 @@
 import { FaRegComment } from "react-icons/fa";
 import { BiRepost } from "react-icons/bi";
-import { FaRegHeart } from "react-icons/fa";
+import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { FaRegBookmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
 import { useState } from "react";
@@ -24,7 +24,7 @@ const Post = ({ post }) => {
     },
   });
 
-  const isLiked = false;
+  let isLiked = (post?.likes?.includes(authUser._id) || false) && post.likes.length > 0;
   const isMyPost = postOwner._id == authUser._id.toString();
   const formattedDate = "1h";
   const isCommenting = false;
@@ -53,21 +53,60 @@ const Post = ({ post }) => {
 
   const handleDeletePost = () => {
     if (isDeleting) return;
-    toast.promise(
-      deletePost(), 
-      {
-        loading: "Deleting post...",
-        success: <b>Post Deleted!</b>,
-        error: <b>Could not delete post</b>,
-      }
-    );
+    toast.promise(deletePost(), {
+      loading: "Deleting post...",
+      success: <b>Post Deleted!</b>,
+      error: <b>Could not delete post</b>,
+    });
   };
 
   const handlePostComment = (e) => {
     e.preventDefault();
   };
 
-  const handleLikePost = () => {};
+  const { mutate: likePost, isPending: isLiking } = useMutation({
+    mutationFn: async () => {
+      try {
+        const response = await fetch(`/api/posts/like/${post._id}`, {
+          method: "POST",
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.e || "Failed to like post");
+        } else {
+          isLiked = !isLiked; 
+          return data;
+        }
+      } catch (error) {
+        console.error("Error liking post:", error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      // queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.setQueryData(["posts"], (oldPosts) => {
+        return oldPosts.map((p) => {
+          if (p._id === post._id) {
+            return {
+              ...p,
+              likes: data.updatedLikes,
+            };
+          }
+          return p;
+        });
+      })
+      if(isLiked) toast.success("Post unliked!");
+      else toast.success("Post liked!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to like post");
+    },
+  });
+
+  const handleLikePost = () => {
+    if (isLiking) return; // Prevent multiple clicks
+    likePost();
+  };
 
   return (
     <>
@@ -94,10 +133,14 @@ const Post = ({ post }) => {
             </span>
             {isMyPost && (
               <span className="flex justify-end flex-1">
-                {!isDeleting ? <FaTrash
-                  className="cursor-pointer hover:text-red-500"
-                  onClick={handleDeletePost}
-                /> : <LoadingSpinner />}
+                {!isDeleting ? (
+                  <FaTrash
+                    className="cursor-pointer hover:text-red-500"
+                    onClick={handleDeletePost}
+                  />
+                ) : (
+                  <LoadingSpinner />
+                )}
               </span>
             )}
           </div>
@@ -198,20 +241,23 @@ const Post = ({ post }) => {
                 className="flex gap-1 items-center group cursor-pointer"
                 onClick={handleLikePost}
               >
-                {!isLiked && (
+                {isLiking && (
+                  <LoadingSpinner className="w-4 h-4" />
+                )}
+                {!isLiked && !isLiking && (
                   <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
                 )}
                 {isLiked && (
-                  <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500 " />
+                  <FaHeart className="w-4 h-4 cursor-pointer text-pink-500 " />
                 )}
 
-                <span
+                {!isLiking && <span
                   className={`text-sm text-slate-500 group-hover:text-pink-500 ${
                     isLiked ? "text-pink-500" : ""
                   }`}
                 >
                   {post.likes.length}
-                </span>
+                </span>}
               </div>
             </div>
             <div className="flex w-1/3 justify-end gap-2 items-center">
