@@ -34,14 +34,16 @@ const Sidebar = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      queryClient.setQueryData(["authUser"], null); 
       toast.success("Logged out successfully");
     },
   });
 
   const { data: authUser } = useQuery({
-    queryKey: ["authUser"],
+     queryKey: ["authUser"],
     queryFn: async () => {
       const response = await fetch("/api/auth/me");
+      if (response.status === 401) return null;
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.error || "Failed to fetch user data");

@@ -1,9 +1,38 @@
 import { Link } from "react-router-dom";
 import RightPanelSkeleton from "../skeletons/RightPanelSkeleton";
-import { USERS_FOR_RIGHT_PANEL } from "../../utils/db/dummy";
+import LoadingSpinner from "./LoadingSpinner.jsx";
+
+import { useQuery } from "@tanstack/react-query";
+import useFollow from "../../hooks/useFollow";
 
 const RightPanel = () => {
-  const isLoading = false;
+  const { data: Users, isLoading } = useQuery({
+    queryKey: ["rightPanelUsers"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/user/suggested");
+        if (!response.ok) {
+          throw new Error("Failed to fetch suggested users");
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching suggested users:", error);
+        return [];
+      }
+    },
+  });
+
+  const { follow, isPending } = useFollow();
+  if (!Users || Users.length === 0) {
+    return <div className="md:w-64 w-0"></div>;
+  }
+
+
+  const handleFollow = (e, userId) => {
+    e.preventDefault();
+    follow(userId);
+  };
 
   return (
     <div className="hidden lg:block my-4 mx-2">
@@ -20,7 +49,7 @@ const RightPanel = () => {
             </>
           )}
           {!isLoading &&
-            USERS_FOR_RIGHT_PANEL?.map((user) => (
+            Users?.map((user) => (
               <Link
                 to={`/profile/${user.username}`}
                 className="flex items-center justify-between gap-4"
@@ -34,7 +63,7 @@ const RightPanel = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="font-semibold tracking-tight truncate w-28">
-                      {user.fullName}
+                      {user.fullname}
                     </span>
                     <span className="text-sm text-slate-500">
                       @{user.username}
@@ -44,9 +73,9 @@ const RightPanel = () => {
                 <div>
                   <button
                     className="btn bg-white text-black hover:bg-white hover:opacity-90 rounded-full btn-sm"
-                    onClick={(e) => e.preventDefault()}
+                    onClick={(e) => {handleFollow(e, user._id)}}
                   >
-                    Follow
+                    {isPending ? <LoadingSpinner size="sm" /> : "Follow"}
                   </button>
                 </div>
               </Link>
