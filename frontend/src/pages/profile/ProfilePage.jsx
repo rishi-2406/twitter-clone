@@ -11,7 +11,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatMemberSinceDate } from "../../utils/date";
 import toast from "react-hot-toast";
 
@@ -44,6 +44,7 @@ const ProfilePage = () => {
   });
 
   const { follow, isPending: isFollowing } = useFollow();
+  const queryClient = useQueryClient();
   const POSTS = []; // This can be replaced with actual posts data if needed
 
   const [coverImg, setCoverImg] = useState(null);
@@ -53,7 +54,7 @@ const ProfilePage = () => {
   const coverImgRef = useRef(null);
   const profileImgRef = useRef(null);
 
-  const { mutateAsync: updateImg } = useMutation({
+  const { mutateAsync: updateImg, isPending : isUpdating } = useMutation({
     mutationFn: async () => {
       try {
         const response = await fetch("/api/user/update", {
@@ -74,6 +75,7 @@ const ProfilePage = () => {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries(["authUser"])
       refetch();
     },
   });
@@ -234,7 +236,7 @@ const ProfilePage = () => {
                       });
                     }}
                   >
-                    Update
+                    {isUpdating ? <LoadingSpinner size="sm" /> : "Update"}
                   </button>
                 )}
               </div>
