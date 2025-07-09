@@ -86,9 +86,10 @@ export const commentPost = async (req, res) => {
     postToUpdate.comments.push(newComment);
     await postToUpdate.save();
 
-    return res
-      .status(201)
-      .json({ message: "Comment created successfully", newComment });
+    let lastComment = postToUpdate.comments[postToUpdate.comments.length - 1];
+    lastComment.user = await User.findById(req.user._id, "-password");
+
+    return res.status(201).json({ newComment : lastComment });
   } catch (error) {
     return res
       .status(500)
@@ -97,7 +98,6 @@ export const commentPost = async (req, res) => {
 };
 
 export const likePost = async (req, res) => {
-
   try {
     const postId = req.params.id;
 
@@ -123,7 +123,9 @@ export const likePost = async (req, res) => {
         { $pull: { likedPosts: postId } }
       );
       message = "Unliked Successfully";
-      updatedLikes = updatedLikes.filter((id) => id.toString() !== req.user._id.toString());
+      updatedLikes = updatedLikes.filter(
+        (id) => id.toString() !== req.user._id.toString()
+      );
     } else {
       postToUpdate.likes.push(req.user._id);
       await User.updateOne(
@@ -142,8 +144,7 @@ export const likePost = async (req, res) => {
     });
 
     newNotification.save();
-return res.status(201).json({ message , updatedLikes});
-    
+    return res.status(201).json({ message, updatedLikes });
   } catch (error) {
     return res
       .status(500)
@@ -191,7 +192,8 @@ export const getAllLikedBy = async (req, res) => {
 
 export const getFollowedPosts = async (req, res) => {
   try {
-    const postList = await Post.find({ user: { $in: req.user.following } }).sort({createdAt : -1})
+    const postList = await Post.find({ user: { $in: req.user.following } })
+      .sort({ createdAt: -1 })
       .populate({
         path: "user",
         select: "-password",
@@ -201,7 +203,7 @@ export const getFollowedPosts = async (req, res) => {
         select: "-password",
       });
 
-    return res.status(200).json(postList );
+    return res.status(200).json(postList);
   } catch (error) {
     return res
       .status(500)
@@ -210,13 +212,14 @@ export const getFollowedPosts = async (req, res) => {
 };
 
 export const getUserPost = async (req, res) => {
-    try {
-        const user = await User.findOne({username : req.params.username})
-        // console.log(user);
-        if(!user) return res.status(500).json({error : "Couldnt find that user"})
-        const userId = user._id;
-        const postList = await Post.find({user : userId}).sort({createdAt : -1})
-        .populate({
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    // console.log(user);
+    if (!user) return res.status(500).json({ error: "Couldnt find that user" });
+    const userId = user._id;
+    const postList = await Post.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .populate({
         path: "user",
         select: "-password",
       })
@@ -224,9 +227,9 @@ export const getUserPost = async (req, res) => {
         path: "comments.user",
         select: "-password",
       });
-      console.log(postList);
-        return res.status(200).json(postList);
-    } catch (error) {
-        return res.status(500).json({error : "Couldnt fetch user posts"})
-    }
-}
+    console.log(postList);
+    return res.status(200).json(postList);
+  } catch (error) {
+    return res.status(500).json({ error: "Couldnt fetch user posts" });
+  }
+};

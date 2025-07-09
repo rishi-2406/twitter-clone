@@ -24,7 +24,8 @@ const Post = ({ post }) => {
     },
   });
 
-  let isLiked = (post?.likes?.includes(authUser._id) || false) && post.likes.length > 0;
+  let isLiked =
+    (post?.likes?.includes(authUser._id) || false) && post.likes.length > 0;
   const isMyPost = postOwner._id == authUser._id.toString();
   const formattedDate = "1h";
   const isCommenting = false;
@@ -60,8 +61,56 @@ const Post = ({ post }) => {
     });
   };
 
+  const { mutate: postComment, isPending: isPostingComment } = useMutation({
+    mutationFn: async () => {
+      try {
+        const response = await fetch(`/api/posts/comment/${post._id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: comment }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to post comment");
+        } else {
+          setComment(""); // Clear the comment input after posting
+          return data;
+        }
+      } catch (error) {
+        console.error("Error posting comment:", error);
+        throw error;
+      }
+    },
+
+    onSuccess: (data) => {
+      toast.success("Comment posted successfully!");
+      queryClient.setQueryData(["posts"], (oldPosts) => {
+        return oldPosts.map((p) => {
+          if (p._id === post._id) {
+            return {
+              ...p,
+              comments: [
+                ...p.comments,
+                data.newComment,
+              ],
+            };
+          }
+          return p;
+        });
+      });
+    },
+  });
+
   const handlePostComment = (e) => {
     e.preventDefault();
+    if (isPostingComment) return; 
+    if (!comment.trim()) {
+      toast.error("Comment cannot be empty");
+      return;
+    }
+    postComment();
   };
 
   const { mutate: likePost, isPending: isLiking } = useMutation({
@@ -74,7 +123,7 @@ const Post = ({ post }) => {
         if (!response.ok) {
           throw new Error(data.e || "Failed to like post");
         } else {
-          isLiked = !isLiked; 
+          isLiked = !isLiked;
           return data;
         }
       } catch (error) {
@@ -94,8 +143,8 @@ const Post = ({ post }) => {
           }
           return p;
         });
-      })
-      if(isLiked) toast.success("Post unliked!");
+      });
+      if (isLiked) toast.success("Post unliked!");
       else toast.success("Post liked!");
     },
     onError: (error) => {
@@ -210,7 +259,7 @@ const Post = ({ post }) => {
                   </div>
                   <form
                     className="flex gap-2 items-center mt-4 border-t border-gray-600 pt-2"
-                    onSubmit={handlePostComment}
+                    onSubmit={(e) => handlePostComment(e)}
                   >
                     <textarea
                       className="textarea w-full p-1 rounded text-md resize-none border focus:outline-none  border-gray-800"
@@ -241,9 +290,7 @@ const Post = ({ post }) => {
                 className="flex gap-1 items-center group cursor-pointer"
                 onClick={handleLikePost}
               >
-                {isLiking && (
-                  <LoadingSpinner className="w-4 h-4" />
-                )}
+                {isLiking && <LoadingSpinner className="w-4 h-4" />}
                 {!isLiked && !isLiking && (
                   <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
                 )}
@@ -251,13 +298,15 @@ const Post = ({ post }) => {
                   <FaHeart className="w-4 h-4 cursor-pointer text-pink-500 " />
                 )}
 
-                {!isLiking && <span
-                  className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-                    isLiked ? "text-pink-500" : ""
-                  }`}
-                >
-                  {post.likes.length}
-                </span>}
+                {!isLiking && (
+                  <span
+                    className={`text-sm text-slate-500 group-hover:text-pink-500 ${
+                      isLiked ? "text-pink-500" : ""
+                    }`}
+                  >
+                    {post.likes.length}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex w-1/3 justify-end gap-2 items-center">
