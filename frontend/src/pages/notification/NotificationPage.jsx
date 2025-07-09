@@ -4,32 +4,66 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
 import { FaHeart } from "react-icons/fa6";
+import {toast} from "react-hot-toast";
+
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const NotificationPage = () => {
 	const isLoading = false;
-	const notifications = [
-		{
-			_id: "1",
-			from: {
-				_id: "1",
-				username: "johndoe",
-				profileImg: "/avatars/boy2.png",
-			},
-			type: "follow",
+	const queryClient = useQueryClient();
+
+	const {data : notifications, isLoading: isNotificationsLoading} = useQuery({
+		queryKey: ["notifications"],
+		queryFn: async () => {
+			try {
+				const response = await fetch("/api/notification");
+				if (!response.ok) {
+					throw new Error("Failed to fetch notifications");
+				}	
+				const data = await response.json();
+				return data;
+			} catch (error) {
+				console.error("Error fetching notifications:", error);
+				toast.error("Failed to fetch notifications");
+				return [];
+			}
+		}
+	})
+
+	const {mutateAsync: deleteNoti, isPending: isDeleting} = useMutation({
+		mutationFn: async () => {
+			try {
+				const response = await fetch("/api/notification", {
+					method: "DELETE",
+				});
+				if (!response.ok) {
+					throw new Error("Failed to delete notifications");
+				}
+			} catch (error) {
+				console.error("Error deleting notifications:", error);
+				toast.error("Failed to delete notifications");
+			}
 		},
-		{
-			_id: "2",
-			from: {
-				_id: "2",
-				username: "janedoe",
-				profileImg: "/avatars/girl1.png",
-			},
-			type: "like",
-		},
-	];
+		onSuccess: () => {
+			queryClient.setQueryData(["notifications"], []);
+		}
+	})
 
 	const deleteNotifications = () => {
-		alert("All notifications deleted");
+		if(!notifications || notifications.length === 0) {
+			toast.error("No notifications to clear");
+			return;
+		}
+		// Optionally, you can also clear the notifications from the state or refetch them
+		toast.promise(
+			deleteNoti(),
+			{
+				loading: "Deleting notifications...",
+				success: "Notifications deleted successfully",
+				error: "Failed to delete notifications"
+			}
+		)
 	};
 
 	return (

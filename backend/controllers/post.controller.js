@@ -89,7 +89,7 @@ export const commentPost = async (req, res) => {
     let lastComment = postToUpdate.comments[postToUpdate.comments.length - 1];
     lastComment.user = await User.findById(req.user._id, "-password");
 
-    return res.status(201).json({ newComment : lastComment });
+    return res.status(201).json({ newComment: lastComment });
   } catch (error) {
     return res
       .status(500)
@@ -133,17 +133,18 @@ export const likePost = async (req, res) => {
         { $push: { likedPosts: postId } }
       );
       updatedLikes = postToUpdate.likes;
+      const newNotification = new notificationModel({
+        from: req.user._id,
+        to: postToUpdate.user,
+        type: "like",
+        read: false,
+      });
+
+      newNotification.save();
     }
 
     await postToUpdate.save();
-    const newNotification = new notificationModel({
-      from: req.user._id,
-      to: postToUpdate.user,
-      type: "like",
-      read: false,
-    });
 
-    newNotification.save();
     return res.status(201).json({ message, updatedLikes });
   } catch (error) {
     return res
