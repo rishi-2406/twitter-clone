@@ -10,7 +10,7 @@ router.delete('/delete/:id', protectRoute ,  deletePost);
 router.post('/like/:id', protectRoute ,  likePost);
 router.post('/comment/:id', protectRoute ,  commentPost);
 router.get('/all', protectRoute ,getAllPost)
-router.get('/likes/:id' , protectRoute ,getAllLikedBy)
+router.get('/likes/:username' , protectRoute ,getAllLikedBy)
 router.get('/following', protectRoute, getFollowedPosts)
 router.get('/user/:username', protectRoute, getUserPost)
 

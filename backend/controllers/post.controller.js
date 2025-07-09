@@ -174,7 +174,10 @@ export const getAllPost = async (req, res) => {
 
 export const getAllLikedBy = async (req, res) => {
   try {
-    const likedList = await Post.find({ _id: { $in: req.user.likedPosts } })
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.status(500).json({ error: "Couldnt find that user" });
+    const userId = user._id;
+    const likedList = await Post.find({ _id: { $in: user.likedPosts } })
       .populate({
         path: "user",
         select: "-password",
@@ -183,7 +186,7 @@ export const getAllLikedBy = async (req, res) => {
         path: "comments.user",
         select: "-password",
       });
-    return res.status(200).json({ likedList });
+    return res.status(200).json(likedList);
   } catch (error) {
     return res
       .status(500)
