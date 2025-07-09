@@ -4,20 +4,22 @@ import { Link, useParams } from "react-router-dom";
 import Posts from "../../components/common/Posts";
 import ProfileHeaderSkeleton from "../../components/skeletons/ProfileHeaderSkeleton";
 import EditProfileModal from "./EditProfileModal";
-
+import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
+import useFollow from "../../hooks/useFollow";
 
 import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatMemberSinceDate } from "../../utils/date";
+import toast from "react-hot-toast";
 
 const ProfilePage = () => {
   const { username } = useParams();
 
   const { data: authUser } = useQuery({
-    queryKey: ["authUser"],
+    queryKey: ["authUsers"],
     queryFn: async () => {
       try {
         const response = await fetch("/api/auth/me");
@@ -41,6 +43,7 @@ const ProfilePage = () => {
     },
   });
 
+  const { follow, isPending: isFollowing } = useFollow();
   const POSTS = []; // This can be replaced with actual posts data if needed
 
   const [coverImg, setCoverImg] = useState(null);
@@ -50,9 +53,39 @@ const ProfilePage = () => {
   const coverImgRef = useRef(null);
   const profileImgRef = useRef(null);
 
+  const { mutateAsync: updateImg } = useMutation({
+    mutationFn: async () => {
+      try {
+        const response = await fetch("/api/user/update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ profileImg, coverImg }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to update images");
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error updating images:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
   const isMyProfile = username === authUser?.username;
 
-  const { data: user, isLoading , refetch, isRefetching} = useQuery({
+  const {
+    data: user,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ["userProfile"],
     queryFn: async () => {
       try {
@@ -67,21 +100,24 @@ const ProfilePage = () => {
         throw error;
       }
     },
-	retry: 1,
+    retry: 1,
   });
 
   useEffect(() => {
-	refetch();
+    refetch();
   }, [username, refetch]);
 
-  const handleUpdateImg = async () => {
-	try {
-		
-	} catch (error) {
-		
-	}
-  }
-
+  const [localFollowStatus, setLocalFollowStatus] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  useEffect(() => {
+    if (user && authUser) {
+      setFollowerCount(user.followers.length);
+      const isFollowing = user.followers?.some(
+        (id) => id.toString() === authUser._id?.toString()
+      );
+      setLocalFollowStatus(isFollowing);
+    }
+  }, [user, authUser]);
 
   const handleImgChange = (e, state) => {
     const file = e.target.files[0];
@@ -94,7 +130,6 @@ const ProfilePage = () => {
       reader.readAsDataURL(file);
     }
   };
-  
 
   return (
     <>
@@ -169,18 +204,35 @@ const ProfilePage = () => {
               </div>
               <div className="flex justify-end px-4 mt-5">
                 {isMyProfile && <EditProfileModal />}
-                {!isMyProfile && (
-                  <button
-                    className="btn btn-outline rounded-full btn-sm"
-                    onClick={() => alert("Followed successfully")}
-                  >
-                    Follow
-                  </button>
-                )}
+                {!isMyProfile &&
+                  (isFollowing ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <button
+                      className="btn btn-outline rounded-full btn-sm"
+                      onClick={async () => {
+                        const updatedStatus = !localFollowStatus;
+                        setLocalFollowStatus(updatedStatus);
+                        setFollowerCount(
+                          (prev) => prev + (updatedStatus ? 1 : -1)
+                        );
+                        follow(user._id);
+                      }}
+                    >
+                      {localFollowStatus ? "UnFollow" : "Follow"}
+                    </button>
+                  ))}
+
                 {(coverImg || profileImg) && (
                   <button
                     className="btn btn-primary rounded-full btn-sm text-white px-4 ml-2"
-                    onClick={() => handleUpdateImg}
+                    onClick={() => {
+                      toast.promise(updateImg, {
+                        loading: "Updating images...",
+                        success: "Images updated successfully",
+                        error: "Failed to update images",
+                      });
+                    }}
                   >
                     Update
                   </button>
@@ -227,9 +279,7 @@ const ProfilePage = () => {
                     <span className="text-slate-500 text-xs">Following</span>
                   </div>
                   <div className="flex gap-1 items-center">
-                    <span className="font-bold text-xs">
-                      {user?.followers.length}
-                    </span>
+                    <span className="font-bold text-xs">{followerCount}</span>
                     <span className="text-slate-500 text-xs">Followers</span>
                   </div>
                 </div>

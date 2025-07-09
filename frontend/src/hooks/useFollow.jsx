@@ -24,7 +24,7 @@ export default function useFollow() {
         queryClient.invalidateQueries({ queryKey: ["rightPanelUsers"] }),
         queryClient.invalidateQueries({ queryKey: ["authUser"] }),
       ]);
-      toast.success("Followed successfully");
+      toast.success(data.message || "Followed user successfully");
     },
   });
 
