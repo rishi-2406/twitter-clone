@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: auto; /* optional, to keep clickable */
+}

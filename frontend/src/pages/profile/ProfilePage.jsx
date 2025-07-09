@@ -54,7 +54,7 @@ const ProfilePage = () => {
   const coverImgRef = useRef(null);
   const profileImgRef = useRef(null);
 
-  const { mutateAsync: updateImg, isPending : isUpdating } = useMutation({
+  const { mutateAsync: updateImg, isPending: isUpdating } = useMutation({
     mutationFn: async () => {
       try {
         const response = await fetch("/api/user/update", {
@@ -75,7 +75,7 @@ const ProfilePage = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["authUser"])
+      queryClient.invalidateQueries(["authUser"]);
       refetch();
     },
   });
@@ -124,6 +124,12 @@ const ProfilePage = () => {
   const handleImgChange = (e, state) => {
     const file = e.target.files[0];
     if (file) {
+      const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Only PNG, JPG, and JPEG files are allowed.");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = () => {
         state === "coverImg" && setCoverImg(reader.result);

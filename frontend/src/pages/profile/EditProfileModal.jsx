@@ -30,26 +30,32 @@ const EditProfileModal = () => {
           },
           body: JSON.stringify(formData),
         });
+		const data = await response.json();
         if (!response.ok) {
-          throw new Error("Failed to update profile");
+          throw new Error( data.error ||  "Failed to update profile");
         }
-        const data = await response.json();
         return data;
       } catch (error) {
-        console.error("Error updating profile:", error);
-        throw error;
+        console.error("Error updating profile:", error.message);
+		throw new Error(error.message || "Failed to update profile");
       }
     },
-	onSuccess: () => {
+	onSuccess: (data) => {
 		queryClient.invalidateQueries(["authUser"]);
 		queryClient.invalidateQueries(["userProfile"]);
 		document.getElementById("edit_profile_modal").close()
+	},
+	onError: (error) => {
+	  toast.error(error.message || "Failed to update profile");
 	}
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isUpdating) return;
+	if(formData.newPassword && formData.newPassword.length < 6) {
+		toast.error("New password must be at least 6 characters long.");
+	}
     if (
       !formData.fullname &&
       !formData.username &&
@@ -66,7 +72,6 @@ const EditProfileModal = () => {
       {
         loading: "Updating profile...",
         success: "Profile updated successfully!",
-        error: "Failed to update profile.",
       }
     );
   };
@@ -87,8 +92,7 @@ const EditProfileModal = () => {
           <form
             className="flex flex-col gap-4"
             onSubmit={(e) => {
-              e.preventDefault();
-              alert("Profile updated successfully");
+              handleSubmit(e);
             }}
           >
             <div className="flex flex-wrap gap-2">
@@ -152,7 +156,7 @@ const EditProfileModal = () => {
               name="link"
               onChange={handleInputChange}
             />
-            <button onClick={handleSubmit} className="btn btn-primary rounded-full btn-sm text-white">
+            <button type="submit" className="btn btn-primary rounded-full btn-sm text-white">
               Update
             </button>
           </form>
