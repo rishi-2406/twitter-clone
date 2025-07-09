@@ -240,6 +240,8 @@ const ProfilePage = () => {
                         success: "Images updated successfully",
                         error: "Failed to update images",
                       });
+                      setCoverImg(null);
+                      setProfileImg(null);
                     }}
                   >
                     {isUpdating ? <LoadingSpinner size="sm" /> : "Update"}
