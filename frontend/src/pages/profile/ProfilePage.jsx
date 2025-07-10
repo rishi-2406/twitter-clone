@@ -77,6 +77,12 @@ const ProfilePage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(["authUser"]);
       refetch();
+      setCoverImg(null);
+      setProfileImg(null);
+    },
+    onError: () => {
+      setCoverImg(null);
+      setProfileImg(null);
     },
   });
 
@@ -240,8 +246,6 @@ const ProfilePage = () => {
                         success: "Images updated successfully",
                         error: "Failed to update images",
                       });
-                      setCoverImg(null);
-                      setProfileImg(null);
                     }}
                   >
                     {isUpdating ? <LoadingSpinner size="sm" /> : "Update"}
