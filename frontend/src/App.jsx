@@ -19,7 +19,7 @@ function App() {
 
         // handle unauthorized without throwing
         if (response.status === 401 || response.status === 403) {
-          data = null;
+          // data = null;
           return null;
         }
 
