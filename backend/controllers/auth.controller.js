@@ -3,26 +3,26 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 
 export const signup = async (req, res) => {
-  const { fullname, username, email, password } = req.body;
-
-  const usernameExist = await User.findOne({ username });
-  if (usernameExist) return res.status(400).json({ error: "Username already taken!" });
-
-  const emailExist = await User.findOne({ email });
-  if (emailExist) return res.status(400).json({ error: "Email already taken!" });
-
-  if(password.length < 6) return res.status(400).json({error : "Password must be atleast 6 characters"})
-
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-  const newuser = new User({
-    fullname,
-    username,
-    password: hashedPassword,
-    email,
-  });
-
   try {
+    const { fullname, username, email, password } = req.body;
+
+    const usernameExist = await User.findOne({ username });
+    if (usernameExist) return res.status(400).json({ error: "Username already taken!" });
+
+    const emailExist = await User.findOne({ email });
+    if (emailExist) return res.status(400).json({ error: "Email already taken!" });
+
+    if(password.length < 6) return res.status(400).json({error : "Password must be atleast 6 characters"})
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newuser = new User({
+      fullname,
+      username,
+      password: hashedPassword,
+      email,
+    });
+
     if (newuser) {
       generateTokenAndSetCookie(newuser._id, res);
       await newuser.save();
@@ -39,6 +39,7 @@ export const signup = async (req, res) => {
       res.status(400).json({ error: "Failed to create account" });
     }
   } catch (e) {
+    console.log("Error in signup controller", e.message);
     res.status(500).json({ error: e.message || "Internal server error" });
   }
 };

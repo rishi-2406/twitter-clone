@@ -32,6 +32,12 @@ app.use("/api/user", userRoute);
 app.use("/api/posts", postsRoute);
 app.use("/api/notification", notificationRoute);
 
+// Vercel strips the /api prefix due to routePrefix configuration, so we also mount them without it
+app.use("/auth", authRoute);
+app.use("/user", userRoute);
+app.use("/posts", postsRoute);
+app.use("/notification", notificationRoute);
+
 const distPath = path.resolve(__dirname, '../frontend/dist');
 
 if (process.env.NODE_ENV === "production") {

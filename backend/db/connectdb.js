@@ -8,7 +8,9 @@ const connectdb = async () => {
         console.log("Connected to db successfully" , res.connection.host)
     } catch (e) {
         console.log("Error while conencting to db" , e);
-        process.exit(1);
+        if (process.env.NODE_ENV !== "production") {
+            process.exit(1);
+        }
     }
 }
 
